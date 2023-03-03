@@ -367,6 +367,24 @@ services:
     networks:
       - perfana
 
+#######################################################################################################################
+  jupyter:
+    image: perfana/jupyter
+    build:
+      context: ./perfana-kedro
+      target: dev
+    expose:
+    - 8888
+    volumes:
+      - ./perfana-kedro:/home/jovyan/work
+    ports:
+    - 8889:8888
+    - 4141:4141
+    - 8022:22
+
+    networks:
+      - perfana
+
 
 #######################################################################################################################
 networks:
