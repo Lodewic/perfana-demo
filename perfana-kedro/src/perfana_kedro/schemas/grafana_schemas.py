@@ -1,9 +1,7 @@
+from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field, root_validator
-
-from datetime import datetime
-
 
 
 class SnapshotDataFields(BaseModel):
@@ -27,11 +25,13 @@ class SnapshotDataDataPoints(BaseModel):
     meta: Dict[str, Any]
     alias: str
 
+
 class SnapshotDataTable(BaseModel):
     rows: List[Any]
     columns: List[Any]
     # meta: Dict[str, Any]
     # alias: str
+
 
 class GrafanaPanel(BaseModel):
     id: int
@@ -44,21 +44,19 @@ class GrafanaPanel(BaseModel):
     @root_validator(pre=True)
     def check_if_panel_has_data(cls, values):
         values = dict(values)
-        panel_has_data = (
-            "snapshotData" in values.keys()
-        )
+        panel_has_data = "snapshotData" in values.keys()
         values["has_data"] = panel_has_data
         return values
+
 
 class GrafanaDashboard(BaseModel):
     id: int
     title: str
     panels: List[GrafanaPanel] = []
     description: Optional[str] = None
-    title: str
     uid: str
-    id: int
     tags: List[str]
+
 
 class GrafanaSnapshot(BaseModel):
     class SnapshotMeta(BaseModel):
