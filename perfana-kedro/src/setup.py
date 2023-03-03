@@ -1,8 +1,6 @@
 from setuptools import find_packages, setup
 
-entry_point = (
-    "perfana-kedro = perfana_kedro.__main__:main"
-)
+entry_point = "perfana-kedro = perfana_kedro.__main__:main"
 
 
 # get the dependencies and installs
@@ -16,6 +14,39 @@ with open("requirements.txt", encoding="utf-8") as f:
         if req and not req.startswith("--"):
             requires.append(req)
 
+docs_dependencies = [
+    "docutils<0.18.0",
+    "sphinx~=3.4.3",
+    "sphinx_rtd_theme==0.5.1",
+    "nbsphinx==0.8.1",
+    "nbstripout~=0.4",
+    "sphinx-autodoc-typehints==1.11.1",
+    "sphinx_copybutton==0.3.1",
+    "ipykernel>=5.3, <7.0",
+    "Jinja2<3.1.0",
+    "myst-parser~=0.17.2",
+]
+
+test_dependencies = [
+    "pytest-cov~=3.0",
+    "pytest-mock>=1.7.1, <2.0",
+    "pytest~=7.2",
+]
+
+lint_dependencies = [
+    "black~=22.0",
+    "isort~=5.0",
+    "autoflake>=2.0.0",
+    "yamllint>=1.26.3",
+    "mypy>=1.0.0",
+    "types-PyYAML==6.0.12.2",
+    "types-ujson==5.7.0.0",
+    "types-setuptools",
+]
+
+dev_dependencies = ["pre-commit"]
+
+
 setup(
     name="perfana_kedro",
     version="0.1",
@@ -23,18 +54,8 @@ setup(
     entry_points={"console_scripts": [entry_point]},
     install_requires=requires,
     extras_require={
-        "docs": [
-            "docutils<0.18.0",
-            "sphinx~=3.4.3",
-            "sphinx_rtd_theme==0.5.1",
-            "nbsphinx==0.8.1",
-            "nbstripout~=0.4",
-            "sphinx-autodoc-typehints==1.11.1",
-            "sphinx_copybutton==0.3.1",
-            "ipykernel>=5.3, <7.0",
-            "Jinja2<3.1.0",
-            "myst-parser~=0.17.2",
-        ],
-        "dev": []
+        "docs": docs_dependencies,
+        "lint": lint_dependencies,
+        "dev": lint_dependencies + test_dependencies + dev_dependencies,
     },
 )
