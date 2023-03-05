@@ -295,8 +295,6 @@ services:
   ######################################################################################################################
   mariadb:
     image: mariadb:10.5.5
-    volumes:
-      - ./test_db:/db
     environment:
       MYSQL_ROOT_PASSWORD: perfana
     ports:
@@ -304,8 +302,9 @@ services:
     networks:
       - perfana
     volumes:
-    - ./test_db:/docker-entrypoint-initdb.d
-    - ./mariadb:/etc/mysql/conf.d
+      - ./test_db:/db
+      - ./test_db:/docker-entrypoint-initdb.d
+      - ./mariadb:/etc/mysql/conf.d
     deploy:
      resources:
        limits:
@@ -376,7 +375,7 @@ services:
     expose:
     - 8888
     volumes:
-      - ./perfana-kedro:/home/jovyan/work
+      - ./perfana-kedro:/home/jovyan/work/perfana-kedro
     ports:
     - 8889:8888
     - 4141:4141

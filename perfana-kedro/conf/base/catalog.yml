@@ -2,3 +2,10 @@
 #
 # Documentation for this file format can be found in "The Data Catalog"
 # Link: https://kedro.readthedocs.io/en/stable/data/data_catalog.html
+df_mongo_test_run_snapshots:
+  type: pandas.ParquetDataSet
+  filepath: data/02_intermediate/mongo_test_run_snapshots.parquet
+
+df_counts_per_test_run:
+  type: pandas.ParquetDataSet
+  filepath: data/02_intermediate/counts_per_test_run.parquet

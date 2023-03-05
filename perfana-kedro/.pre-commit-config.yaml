@@ -18,6 +18,7 @@ repos:
         additional_dependencies:
         - types-ujson==5.7.0.0
         - types-PyYAML==6.0.12.2
+        - types-requests==2.28.11.15
 -   repo: https://github.com/PyCQA/autoflake
     rev: v2.0.0
     hooks:

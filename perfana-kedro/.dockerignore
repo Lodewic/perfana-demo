@@ -9,12 +9,16 @@ Dockerfile
 conf/**/*credentials*
 
 # ignore all local configuration
-conf/local
+!conf/local
 !conf/local/.gitkeep
 
+# keep data structure
+!data/*/.gitkeep
+!logs/*/.gitkeep
+
 # ignore everything in the following folders
-data
-logs
+# data
+# logs
 # notebooks
 references
 results
