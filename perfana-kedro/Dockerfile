@@ -4,15 +4,15 @@ USER root
 RUN sudo apt-get update && sudo apt-get install libmariadb3 libmariadb-dev openssh-server supervisor -y
 RUN pip install mariadb pymongo
 
-USER ${NB_UID}
-
 # install project requirements
-COPY src/requirements.txt /home/jovyan/work/src/requirements.txt
+COPY src/requirements.txt src/setup.py /home/jovyan/work/src/
+COPY src/perfana_kedro/__init__.py src/perfana_kedro/__main__.py /home/jovyan/work/src/perfana_kedro/
 RUN pip install -r /home/jovyan/work/src/requirements.txt
 
-# copy entire directory and install our python package editable
-COPY . /home/jovyan/work/
+# install our python package editable
 RUN pip install -e /home/jovyan/work/src/[dev]
+
+USER ${NB_UID}
 
 # for jupyter lab
 EXPOSE 8888
