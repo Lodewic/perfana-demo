@@ -42,6 +42,7 @@ lint_dependencies = [
     "types-PyYAML==6.0.12.2",
     "types-ujson==5.7.0.0",
     "types-setuptools",
+    "types-requests==2.28.11.15",
 ]
 
 dev_dependencies = ["pre-commit"]
