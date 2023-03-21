@@ -3,3 +3,5 @@ omnidb/
 Archive/
 analytics/
 backup_kedro/
+.pytest_cache
+**/profiling/**

@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 import pandas as pd
@@ -14,32 +14,41 @@ from perfana_kedro.schemas import grafana_schemas
 logger = logging.getLogger(__name__)
 
 
-def aggregate_test_runs_to_snapshot_keys(mongo_connection_string: str) -> Dict[str, List[str]]:
+def aggregate_test_runs_to_snapshot_keys(
+    mongo_connection_string: str,
+) -> Dict[str, List[str]]:
     mongo_client = MongoClient(host=mongo_connection_string, connect=True)
 
     mongo_snapshotkeys = list(
         mongo_client.perfana.snapshots.aggregate(
-            [{"$group": {"_id": "$testRunId", "snapshotKeys": {"$push": "$snapshotKey"}}}]
+            [
+                {
+                    "$group": {
+                        "_id": "$testRunId",
+                        "snapshotKeys": {"$push": "$snapshotKey"},
+                    }
+                }
+            ]
         )
     )
     test_runs_snapshot_mapping = {x["_id"]: x["snapshotKeys"] for x in mongo_snapshotkeys}
     return test_runs_snapshot_mapping
 
 
-def get_filtered_test_run_ids(df_test_runs, parameters: Dict[str, Any]) -> List[str]:
+def filter_test_runs(
+    df_test_runs,
+    application: str = "OptimusPrime",
+    test_environment: str = "acme",
+    test_type: str = "loadTest",
+):
     test_run_ids = (
         df_test_runs.query(
-            "application == 'OptimusPrime' & testEnvironment == 'acme' & testType == 'loadTest' and completed"
+            f"application == '{application}' & testEnvironment == '{test_environment}' & testType == '{test_type}' and completed"
         )
-        .sort_values("start", ascending=False)
-        # .head(10)
-        ["testRunId"]
+        .sort_values("start", ascending=False)["testRunId"]
         .to_list()
     )
-    return test_run_ids
 
-
-def filter_test_runs(df_test_runs, test_run_ids: List[str]) -> List[str]:
     df_test_runs_filtered = df_test_runs.loc[df_test_runs["testRunId"].isin(test_run_ids)]
     return df_test_runs_filtered
 
@@ -48,7 +57,14 @@ def get_test_run_snapshots_data(mongo_connection_string: str) -> pd.DataFrame:
     mongo_client = MongoClient(host=mongo_connection_string, connect=True)
     mongo_snapshotkeys = list(
         mongo_client.perfana.snapshots.aggregate(
-            [{"$group": {"_id": "$testRunId", "snapshotKeys": {"$push": "$snapshotKey"}}}]
+            [
+                {
+                    "$group": {
+                        "_id": "$testRunId",
+                        "snapshotKeys": {"$push": "$snapshotKey"},
+                    }
+                }
+            ]
         )
     )
 
@@ -66,27 +82,39 @@ def get_test_run_snapshots_data(mongo_connection_string: str) -> pd.DataFrame:
     return df_test_runs
 
 
+def parse_test_run_config_as_dataframe(
+    test_run_configs: List[Dict[str, Any]]
+) -> Tuple[pd.DataFrame, List[Dict[str, Any]]]:
+    df_test_run_configs = pd.json_normalize(test_run_configs)
+    return df_test_run_configs
+
+
 def get_test_run_config_json(
-    mongo_connection_string: str, test_run_ids: Optional[List[str]] = None
-) -> List[Dict[str, Any]]:
+    mongo_connection_string: str, df_test_runs: Optional[pd.DataFrame] = None
+) -> Tuple[pd.DataFrame, List[Dict[str, Any]]]:
     mongo_client = MongoClient(host=mongo_connection_string, connect=True)
     mongo_query = mongo_client.perfana.testRunConfigs
     aggregates: List[Dict[str, Any]] = []
-    if test_run_ids is not None:
+    if df_test_runs is not None:
+        test_run_ids = df_test_runs["testRunId"].unique().tolist()
         aggregates.append({"$match": {"$expr": {"$in": ["$testRunId", test_run_ids]}}})
-    aggregates.append({"$group": {"_id": "$testRunId", "_key": {"$push": "$key"}, "_value": {"$push": "$value"}}})
+    aggregates.append(
+        {
+            "$group": {
+                "_id": "$testRunId",
+                "_key": {"$push": "$key"},
+                "_value": {"$push": "$value"},
+            }
+        }
+    )
 
     mongo_test_run_configs = list(mongo_query.aggregate(aggregates))
     mongo_test_run_configs = [
         {"testRunId": x["_id"], "config": dict(zip(x["_key"], x["_value"]))} for x in mongo_test_run_configs
     ]
 
-    return mongo_test_run_configs
-
-
-def parse_test_run_config_as_dataframe(test_run_configs: List[Dict[str, Any]]) -> pd.DataFrame:
-    df_test_run_configs = pd.json_normalize(test_run_configs)
-    return df_test_run_configs
+    df_test_run_configs = parse_test_run_config_as_dataframe(mongo_test_run_configs)
+    return df_test_run_configs, mongo_test_run_configs
 
 
 def count_snapshots_per_test_run(df_test_runs: pd.DataFrame) -> pd.DataFrame:
@@ -142,23 +170,54 @@ def get_grafana_snapshot_object(
     return snapshot_obj
 
 
+def format_data_from_snapshot(
+    snapshot: grafana_schemas.GrafanaSnapshot,
+) -> pd.DataFrame:
+    panel_data_list = []
+    for panel in snapshot.dashboard.panels:
+        if panel.has_data:
+            df_panel = format_data_from_panel(panel)
+            panel_data_list.append(df_panel)
+
+    df_snapshot = pd.concat(panel_data_list, axis=0).assign(
+        key=snapshot.key,
+        testRunId=snapshot.testRunId,
+        dashboard_title=snapshot.dashboard.title,
+        dashboard_id=snapshot.dashboard.id,
+    )
+    return df_snapshot
+
+
+def format_snapshot_objects_as_dataframe(
+    snapshots: List[grafana_schemas.GrafanaSnapshot],
+) -> pd.DataFrame:
+    df_snapshots = pd.concat([format_data_from_snapshot(snapshot) for snapshot in snapshots], axis=0)
+    df_snapshots = df_snapshots.groupby("testRunId", group_keys=False).apply(
+        lambda df: df.assign(start_time=df["time"].min(), timestep=(df["time"] - df["time"].min()))
+    )
+    return df_snapshots
+
+
 def get_and_parse_grafana_snapshots_objects(
     grafana_api_token: str, df_test_runs: pd.DataFrame
-) -> List[grafana_schemas.GrafanaSnapshot]:
+) -> Tuple[pd.DataFrame, List[grafana_schemas.GrafanaSnapshot]]:
     snapshots = []
     headers = create_auth_headers(grafana_api_token)
 
     with httpx.Client(headers=headers) as client:
         for i, (idx, row) in tqdm(
-            enumerate(df_test_runs.iterrows()), desc=f"Getting snapshots for {df_test_runs.shape[0]} runs"
+            enumerate(df_test_runs.iterrows()),
+            desc=f"Getting snapshots for {df_test_runs.shape[0]} runs",
         ):
             for key in row["snapshotKeys"]:
                 try:
                     snapshot = get_grafana_snapshot_object(key=key, testRunId=row["testRunId"], client=client)
+                    snapshots.append(snapshot)
                 except (ValueError, ValidationError):
                     pass
-                snapshots.append(snapshot)
-    return snapshots
+
+    df_snapshots = format_snapshot_objects_as_dataframe(snapshots)
+    return df_snapshots, snapshots
 
 
 def format_data_from_panel(panel: grafana_schemas.GrafanaPanel) -> pd.DataFrame:
@@ -211,24 +270,3 @@ def format_data_from_panel(panel: grafana_schemas.GrafanaPanel) -> pd.DataFrame:
     df_panel = pd.DataFrame.from_records(panel_records)
 
     return df_panel
-
-
-def format_data_from_snapshot(snapshot: grafana_schemas.GrafanaSnapshot) -> pd.DataFrame:
-    panel_data_list = []
-    for panel in snapshot.dashboard.panels:
-        if panel.has_data:
-            df_panel = format_data_from_panel(panel)
-            panel_data_list.append(df_panel)
-
-    df_snapshot = pd.concat(panel_data_list, axis=0).assign(
-        key=snapshot.key,
-        testRunId=snapshot.testRunId,
-        dashboard_title=snapshot.dashboard.title,
-        dashboard_id=snapshot.dashboard.id,
-    )
-    return df_snapshot
-
-
-def format_snapshot_objects_as_dataframe(snapshots: List[grafana_schemas.GrafanaSnapshot]) -> pd.DataFrame:
-    df_snapshots = pd.concat([format_data_from_snapshot(snapshot) for snapshot in snapshots], axis=0)
-    return df_snapshots

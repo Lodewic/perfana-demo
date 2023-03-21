@@ -1,0 +1,38 @@
+test_run_filter_groups:
+  - application: OptimusPrime
+    test_type: loadTest
+    test_environment: acme
+    correlations:
+      dashboards: &OptimusPrimeDashboards
+        JVM: 'OptimusPrime - JVM | test environment = acme'
+        JVM_fe: 'OptimusPrime - JVM | test environment = acme | service = optimus-prime-fe'
+        JVM_be: 'OptimusPrime - JVM | test environment = acme | service = optimus-prime-be'
+        Gatling_remote_call_async: 'OptimusPrime - Gatling Request Performance | test environment = acme | requestName = remote_call_async'
+        Gatling_flaky_call: 'OptimusPrime - Gatling Request Performance | test environment = acme | requestName = flaky_call'
+        Gatling_simple_delay: 'OptimusPrime - Gatling Request Performance | test environment = acme | requestName = simple_delay'
+#  - application: OptimusPrime
+#    test_type: stressTest
+#    test_environment: acme
+#    correlations:
+#      dashboards: *OptimusPrimeDashboards
+#  - application: BumbleBee  # <-- HAS ERRORS
+#    test_type: k6-loadTest
+#    test_environment: acme
+#  - application: JetFire
+#    test_type: loadTest
+#    test_environment: acme
+#  - application: JetFire
+#    test_type: locust-loadTest
+#    test_environment: acme
+#  - application: OptimusPrime
+#    test_type: loadTest
+#    test_environment: acme
+#  - application: StarScream
+#    test_type: UNKNOWN_WORKLOAD
+#    test_environment: acme
+#  - application: StarScream
+#    test_type: loadTest
+#    test_environment: acme
+#  - application: StarScream
+#    test_type: stressTest
+#    test_environment: acme
