@@ -29,8 +29,6 @@ class SnapshotDataDataPoints(BaseModel):
 class SnapshotDataTable(BaseModel):
     rows: List[Any]
     columns: List[Any]
-    # meta: Dict[str, Any]
-    # alias: str
 
 
 class GrafanaPanel(BaseModel):

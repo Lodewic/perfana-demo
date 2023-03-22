@@ -1,8 +1,9 @@
 from kedro.io import DataCatalog
 from kedro.pipeline import Pipeline, node
-from nodes.correlation.clean_and_format import calculate_correlation_metrics, format_dashboard_as_wide
-from nodes.correlation.visualize import visualize_correlation_plotly
-from nodes.utils import add_dataset_copy_with_suffix_filepath
+
+from perfana_kedro.nodes.correlation.clean_and_format import calculate_correlation_metrics, format_dashboard_as_wide
+from perfana_kedro.nodes.correlation.visualize import visualize_correlation_plotly
+from perfana_kedro.nodes.utils import add_dataset_copy_with_suffix_filepath
 
 
 def create_pipeline(catalog: DataCatalog) -> Pipeline:

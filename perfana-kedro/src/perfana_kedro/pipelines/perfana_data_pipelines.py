@@ -1,6 +1,5 @@
 from kedro.io import DataCatalog
 from kedro.pipeline import Pipeline, node
-from nodes.utils import add_dataset_copy_with_suffix_filepath
 
 from perfana_kedro.nodes.snapshot_data.snapshot_data import (
     count_snapshots_per_test_run,
@@ -9,6 +8,7 @@ from perfana_kedro.nodes.snapshot_data.snapshot_data import (
     get_test_run_config_json,
     get_test_run_snapshots_data,
 )
+from perfana_kedro.nodes.utils import add_dataset_copy_with_suffix_filepath
 
 
 def create_snapshots_pipeline(catalog: DataCatalog):

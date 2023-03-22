@@ -3,9 +3,8 @@ from typing import Callable, Dict
 
 from kedro.io import DataCatalog
 from kedro.pipeline import Pipeline
-from pipelines import correlations_pipeline
 
-from perfana_kedro.pipelines import connections_pipeline, perfana_data_pipelines
+from perfana_kedro.pipelines import connections_pipeline, correlations_pipeline, perfana_data_pipelines
 
 
 def register_pipelines():
