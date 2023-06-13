@@ -1,0 +1,41 @@
+df_mongo_test_runs:
+  layer: Raw
+  type: pandas.ParquetDataSet
+  filepath: abfs://data/02_intermediate/df_mongo_test_runs.parquet
+  credentials: azure_storage_account
+
+df_counts_per_test_run:
+  layer: Raw
+  type: pandas.ParquetDataSet
+  filepath: abfs://data/02_intermediate/counts_per_test_run.parquet
+  credentials: azure_storage_account
+
+df_grafana_snapshots:
+  layer: Clean
+  type: pandas.ParquetDataSet
+  filepath: abfs://data/03_primary/df_grafana_snapshots.parquet
+  credentials: azure_storage_account
+
+test_run_configs_json:
+  layer: Clean
+  type: json.JSONDataSet
+  filepath: abfs://data/03_primary/test_run_configs_flat.json
+  credentials: azure_storage_account
+
+df_test_run_configs:
+  layer: Clean
+  type: pandas.CSVDataSet
+  filepath: abfs://data/03_primary/df_test_run_configs.csv
+  credentials: azure_storage_account
+
+dashboard_correlation:
+  layer: Analytics
+  type: pandas.CSVDataSet
+  filepath: abfs://data/04_feature/df_correlation.csv
+  credentials: azure_storage_account
+
+correlation_plot:
+  layer: Analytics
+  type: plotly.JSONDataSet
+  filepath: abfs://data/04_feature/correlation_plot.json
+  credentials: azure_storage_account
